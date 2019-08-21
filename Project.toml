@@ -1,0 +1,7 @@
+name = "Manager"
+uuid = "1bbb0933-3c46-4e49-bdb5-be8c7f9ac6a8"
+authors = ["Abel Soares Siqueira <abel.s.siqueira@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+GitHub = "bc5e4493-9b4d-5f90-b8aa-2b2bcaad7a26"
