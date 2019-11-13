@@ -3,7 +3,8 @@ module Manager
 using Git, GitHub, YAML
 
 export branch_and_pr, clone_repos, fix_travis, set_origin_and_org_remotes,
-       task_branch_commit_and_pr, task_branch_commit_and_pr_in_all_repos
+       task_branch_commit_and_pr, task_branch_commit_and_pr_in_all_repos,
+       look_for_rebased_and_merged_branchs
 
 const stable_versions = ["1.0", "1.1", "1.2"]
 
@@ -178,5 +179,62 @@ function task_branch_commit_and_pr_in_all_repos(org :: String = "JuliaSmoothOpti
     end
   end
 end
+
+function look_for_rebased_and_merged_branchs()
+  commit_hashes = readlines(`git log --format="%h" master`)
+  commit_tree_hashes = readlines(`git log --format="%t" master`)
+  commit_titles = readlines(`git log --format="%s" master`)
+  branches = strip.(readlines(`git branch`))
+
+  for br in branches
+    occursin("master", br) && continue
+    occursin("gh-pages", br) && continue
+    println(greenstr("Branch $br"))
+
+    brhash  = chomp(read(`git log -1 --format="%h" $br`, String))
+    brtree  = chomp(read(`git log -1 --format="%t" $br`, String))
+    brtitle = chomp(read(`git log -1 --format="%s" $br`, String))
+    found = false
+    if brhash in commit_hashes
+      println_maxwidth("  Commit $brhash ($brtitle) appears to be fully integrated into master")
+      found = true
+    elseif brtree in commit_tree_hashes
+      println_maxwidth("  Commit $brhash ($brtitle) appears integrated through a rebase because it's tree hash is the same")
+      i = findfirst(brtree .== commit_tree_hashes)
+      if brtitle != commit_titles[i]
+        println("  HOWEVER, the titles are not the same:")
+        println("    master: $(commit_titles[i])")
+        println("    $br: $brtitle")
+      end
+      found = true
+    elseif brtitle in commit_titles
+      println("  Commit with same title found in master:")
+      i = findfirst(brtitle .== commit_titles)
+      println("    title: $brtitle")
+      println("    master: $(commit_hashes[i])")
+      println("    $br: $brhash")
+      found = true
+    end
+  end
+end
+
+function println_maxwidth(s; maxwidth=80, allow=10)
+  if length(s) < maxwidth + allow
+    println(s)
+  else
+    space = match(r"^\s*", s).match
+    out = []
+    ss = split(s)
+    while length(join(out, " ")) + length(ss[1]) < maxwidth
+      push!(out, popfirst!(ss))
+    end
+    println(space * join(out, " "))
+    println_maxwidth(space * join(ss, " "), maxwidth=maxwidth, allow=allow)
+  end
+end
+
+redstr(s)    = "\033[1;31m$s\033[0m"
+greenstr(s)  = "\033[1;32m$s\033[0m"
+yellowstr(s) = "\033[1;33m$s\033[0m"
 
 end # module
