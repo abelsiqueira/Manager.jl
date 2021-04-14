@@ -7,3 +7,8 @@ version = "0.1.0"
 Git = "d7ba0133-e1db-5d97-8f8c-041e4b3a1eb2"
 GitHub = "bc5e4493-9b4d-5f90-b8aa-2b2bcaad7a26"
 YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
+
+[compat]
+Git = "1.2"
+GitHub = "5"
+YAML = "0.4"
